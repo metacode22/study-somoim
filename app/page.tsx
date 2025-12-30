@@ -1,65 +1,163 @@
-import Image from "next/image";
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import * as Tabs from "@teamsparta/stack-tabs";
+import { vars } from "@teamsparta/stack-tokens";
+import { GroupCard } from "./components/GroupCard";
+import { groupsQueryOptions } from "./lib/queries";
 
 export default function Home() {
+  const { data: groups, isLoading, error } = useQuery(groupsQueryOptions);
+
+  const somoim = groups?.filter((group) => group.type === "소모임") ?? [];
+  const study = groups?.filter((group) =>
+    group.type === "스터디(팀/파트/스쿼드 대상)" ||
+    group.type === "스터디(전사 구성원 대상)"
+  ) ?? [];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: vars.background.default,
+      }}
+    >
+      <main
+        style={{
+          maxWidth: "1200px",
+          margin: "0 auto",
+          padding: "60px 24px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "40px",
+        }}
+      >
+        {/* Notice Banner */}
+        <div
+          style={{
+            backgroundColor: vars.background.subtle,
+            borderRadius: "8px",
+            height: "100px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: "18px",
+              fontWeight: 700,
+              color: vars.text.primary,
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            공지사항
+          </h2>
         </div>
+
+        {/* Tabs Section */}
+        <Tabs.Root defaultValue="somoim" colorScheme="secondary">
+          <Tabs.List>
+            <Tabs.Trigger value="somoim">소모임</Tabs.Trigger>
+            <Tabs.Trigger value="study">스터디</Tabs.Trigger>
+          </Tabs.List>
+
+          <Tabs.Content value="somoim">
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
+                gap: "24px",
+                paddingTop: "24px",
+              }}
+            >
+              {isLoading && <LoadingState />}
+              {error && (
+                <ErrorState message="소모임을 불러오는데 실패했습니다" />
+              )}
+              {!isLoading && !error && somoim.length === 0 && (
+                <EmptyState message="등록된 소모임이 없습니다" />
+              )}
+              {somoim.map((group) => (
+                <GroupCard key={group._id} group={group} />
+              ))}
+            </div>
+          </Tabs.Content>
+
+          <Tabs.Content value="study">
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
+                gap: "24px",
+                paddingTop: "24px",
+              }}
+            >
+              {isLoading && <LoadingState />}
+              {error && (
+                <ErrorState message="스터디를 불러오는데 실패했습니다" />
+              )}
+              {!isLoading && !error && study.length === 0 && (
+                <EmptyState message="등록된 스터디가 없습니다" />
+              )}
+              {study.map((group) => (
+                <GroupCard key={group._id} group={group} />
+              ))}
+            </div>
+          </Tabs.Content>
+        </Tabs.Root>
       </main>
+    </div>
+  );
+}
+
+function LoadingState() {
+  return (
+    <div
+      style={{
+        gridColumn: "1 / -1",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "60px",
+        color: vars.text.tertiary,
+      }}
+    >
+      로딩 중...
+    </div>
+  );
+}
+
+function ErrorState({ message }: { message: string }) {
+  return (
+    <div
+      style={{
+        gridColumn: "1 / -1",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "60px",
+        color: vars.status.error.default,
+      }}
+    >
+      {message}
+    </div>
+  );
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div
+      style={{
+        gridColumn: "1 / -1",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "60px",
+        color: vars.text.tertiary,
+      }}
+    >
+      {message}
     </div>
   );
 }
