@@ -138,11 +138,11 @@ function ActivityLogCard({ log }: { log: ActivityLog }) {
       case "leave":
         return { text: "탈퇴", color: vars.status.error.default };
       case "attendance":
-        return { text: "참석", color: vars.status.info.default };
+        return { text: "참석", color: vars.status.processing.default };
       case "create":
-        return { text: "생성", color: vars.status.warning.default };
+        return { text: "생성", color: vars.status.success.default };
       default:
-        return { text: "활동", color: vars.text.secondary };
+        return { text: "활동", color: vars.status.processing.default };
     }
   };
 
@@ -269,7 +269,7 @@ function EmptyState() {
         gap: "12px",
       }}
     >
-      <ActionLocationPin variant="line" size={48} color={vars.icon.tertiary} />
+      <ActionLocationPin variant="line" size={24} color={vars.icon.tertiary} />
       <p
         style={{
           margin: 0,
