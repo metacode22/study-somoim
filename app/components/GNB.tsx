@@ -68,17 +68,38 @@ export function GNB() {
             <Link
               href="/"
               style={{
-                backgroundColor: vars.fill.subtle,
+                backgroundColor:
+                  pathname === "/" ? vars.fill.subtle : "transparent",
                 borderRadius: "6px",
                 padding: "6px 12px",
                 fontSize: "15px",
                 fontWeight: 500,
-                color: vars.text.secondary,
+                color:
+                  pathname === "/" ? vars.text.secondary : vars.text.tertiary,
                 textDecoration: "none",
                 lineHeight: "22px",
               }}
             >
               소/스 목록
+            </Link>
+            <Link
+              href="/activity-log"
+              style={{
+                backgroundColor:
+                  pathname === "/activity-log" ? vars.fill.subtle : "transparent",
+                borderRadius: "6px",
+                padding: "6px 12px",
+                fontSize: "15px",
+                fontWeight: 500,
+                color:
+                  pathname === "/activity-log"
+                    ? vars.text.secondary
+                    : vars.text.tertiary,
+                textDecoration: "none",
+                lineHeight: "22px",
+              }}
+            >
+              활동 로그
             </Link>
           </div>
         </div>
