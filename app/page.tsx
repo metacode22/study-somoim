@@ -1,19 +1,54 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import * as Tabs from "@teamsparta/stack-tabs";
 import { vars } from "@teamsparta/stack-tokens";
 import { GroupCard } from "./components/GroupCard";
+import { RecruitmentFilters } from "./components/RecruitmentFilters";
 import { groupsQueryOptions } from "./lib/queries";
+import { getGroupsWithMockFields } from "./lib/mock";
+import {
+  applyRecruitmentFilters,
+  type RecruitmentFiltersState,
+} from "./lib/recruitment";
+
+const defaultFilters: RecruitmentFiltersState = {
+  applyAvailable: "all",
+  applyUnavailable: "all",
+  days: [],
+  categories: [],
+};
 
 export default function Home() {
   const { data: groups, isLoading, error } = useQuery(groupsQueryOptions);
+  const [filters, setFilters] = useState<RecruitmentFiltersState>(defaultFilters);
 
-  const somoim = groups?.filter((group) => group.type === "소모임") ?? [];
-  const study = groups?.filter((group) =>
-    group.type === "스터디(팀/파트/스쿼드 대상)" ||
-    group.type === "스터디(전사 구성원 대상)"
-  ) ?? [];
+  const withMock = useMemo(
+    () => (groups ? getGroupsWithMockFields(groups) : []),
+    [groups]
+  );
+  const somoimRaw = useMemo(
+    () => withMock.filter((g) => g.type === "소모임"),
+    [withMock]
+  );
+  const studyRaw = useMemo(
+    () =>
+      withMock.filter(
+        (g) =>
+          g.type === "스터디(팀/파트/스쿼드 대상)" ||
+          g.type === "스터디(전사 구성원 대상)"
+      ),
+    [withMock]
+  );
+  const somoim = useMemo(
+    () => applyRecruitmentFilters(somoimRaw, filters),
+    [somoimRaw, filters]
+  );
+  const study = useMemo(
+    () => applyRecruitmentFilters(studyRaw, filters),
+    [studyRaw, filters]
+  );
 
   return (
     <div
@@ -54,6 +89,9 @@ export default function Home() {
             공지사항
           </h2>
         </div>
+
+        {/* Filters */}
+        <RecruitmentFilters filters={filters} onFiltersChange={setFilters} />
 
         {/* Tabs Section */}
         <Tabs.Root defaultValue="somoim" colorScheme="secondary">

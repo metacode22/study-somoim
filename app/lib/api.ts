@@ -13,6 +13,14 @@ export type GroupType =
   | "스터디(팀/파트/스쿼드 대상)"
   | "스터디(전사 구성원 대상)";
 
+/**
+ * recruitment 확장 필드 (PRD, 목업용)
+ * - category, scheduleDays, selectionPeriod, activityPeriod: 필터·상세·모달
+ * - applyStatus: 신청가능/불가 필터
+ * - isSelectionComplete: 취소 가능 여부
+ */
+export type ApplyStatus = "regular" | "guest" | "newcomer" | "auto" | "closed";
+
 export interface Group {
   _id: string;
   leader: string;
@@ -25,6 +33,13 @@ export interface Group {
   location?: string;
   createdAt: string;
   updatedAt: string;
+  // recruitment PRD (optional, mock/backend)
+  category?: string;
+  scheduleDays?: string[];
+  selectionPeriod?: string;
+  activityPeriod?: string;
+  applyStatus?: ApplyStatus;
+  isSelectionComplete?: boolean;
 }
 
 // API functions
