@@ -56,3 +56,63 @@ export async function getGroupsByRecruitmentStatus(
   );
   return data;
 }
+
+// Chapter types and API
+export type ChapterPhase =
+  | "upcoming"
+  | "application"
+  | "recruitment"
+  | "active"
+  | "completed";
+
+export interface Chapter {
+  _id: string;
+  name: string;
+  sequence: number;
+  periods: {
+    applicationStart: string;
+    applicationEnd: string;
+    recruitmentStart: string;
+    recruitmentEnd: string;
+    activityStart: string;
+    activityEnd: string;
+  };
+  currentPhase: ChapterPhase;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateChapterDto {
+  name: string;
+  sequence?: number;
+  periods: {
+    applicationStart: string; // ISO date string
+    applicationEnd: string;
+    recruitmentStart: string;
+    recruitmentEnd: string;
+    activityStart: string;
+    activityEnd: string;
+  };
+}
+
+export async function getChapters(): Promise<Chapter[]> {
+  const { data } = await apiClient.get<Chapter[]>("/study-somoim/chapters");
+  return data;
+}
+
+export async function getCurrentChapter(): Promise<Chapter | null> {
+  const { data } = await apiClient.get<Chapter | null>(
+    "/study-somoim/chapters/current"
+  );
+  return data;
+}
+
+export async function createChapter(
+  chapterData: CreateChapterDto
+): Promise<Chapter> {
+  const { data } = await apiClient.post<Chapter>(
+    "/study-somoim/chapters",
+    chapterData
+  );
+  return data;
+}
