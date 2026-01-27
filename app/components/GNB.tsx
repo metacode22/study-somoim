@@ -83,6 +83,25 @@ export function GNB() {
               소/스 목록
             </Link>
             <Link
+              href="/my-applications"
+              style={{
+                backgroundColor:
+                  pathname === "/my-applications" ? vars.fill.subtle : "transparent",
+                borderRadius: "6px",
+                padding: "6px 12px",
+                fontSize: "15px",
+                fontWeight: 500,
+                color:
+                  pathname === "/my-applications"
+                    ? vars.text.secondary
+                    : vars.text.tertiary,
+                textDecoration: "none",
+                lineHeight: "22px",
+              }}
+            >
+              내 신청
+            </Link>
+            <Link
               href="/activity-log"
               style={{
                 backgroundColor:

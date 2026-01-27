@@ -44,9 +44,9 @@ export function RecruitmentFilters({
       {/* 신청 가능 / 신청 불가 Select */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
         <Select.Root
-          value={filters.applyAvailable ?? "all"}
+          value={filters.applyAvailable || ""}
           onValueChange={(v) =>
-            onFiltersChange({ ...filters, applyAvailable: v })
+            onFiltersChange({ ...filters, applyAvailable: v || "all" })
           }
         >
           <Select.Trigger style={{ minWidth: "180px" }}>
@@ -61,9 +61,9 @@ export function RecruitmentFilters({
           </Select.Content>
         </Select.Root>
         <Select.Root
-          value={filters.applyUnavailable ?? "all"}
+          value={filters.applyUnavailable || ""}
           onValueChange={(v) =>
-            onFiltersChange({ ...filters, applyUnavailable: v })
+            onFiltersChange({ ...filters, applyUnavailable: v || "all" })
           }
         >
           <Select.Trigger style={{ minWidth: "180px" }}>

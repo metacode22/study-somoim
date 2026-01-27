@@ -77,20 +77,31 @@ export function applyRecruitmentFilters<T extends {
   f: RecruitmentFiltersState
 ): T[] {
   return groups.filter((g) => {
-    if (f.applyAvailable && f.applyAvailable !== "all") {
+    // 신청 가능 필터: applyAvailable이 설정되어 있고 "all"이 아니면 필터링
+    if (f.applyAvailable && f.applyAvailable !== "all" && f.applyAvailable !== "") {
       if (g.applyStatus !== f.applyAvailable) return false;
     }
-    if (f.applyUnavailable && f.applyUnavailable !== "all") {
+    
+    // 신청 불가 필터: applyUnavailable이 설정되어 있고 "all"이 아니면 필터링
+    if (f.applyUnavailable && f.applyUnavailable !== "all" && f.applyUnavailable !== "") {
       if (g.applyStatus !== f.applyUnavailable) return false;
     }
+    
+    // 요일 필터: 선택된 요일이 있으면 해당 요일이 포함된 그룹만 표시
     if (f.days.length > 0) {
-      const days = g.scheduleDays ?? [];
-      if (!days.some((d) => f.days.includes(d))) return false;
+      const days = (g.scheduleDays ?? []) as ScheduleDay[];
+      // 그룹의 scheduleDays 중 하나라도 선택된 필터 요일과 일치하면 통과
+      if (days.length === 0 || !days.some((d) => f.days.includes(d))) {
+        return false;
+      }
     }
+    
+    // 카테고리 필터: 선택된 카테고리가 있으면 해당 카테고리 그룹만 표시
     if (f.categories.length > 0) {
       if (!g.category || !f.categories.includes(g.category as Category))
         return false;
     }
+    
     return true;
   });
 }
