@@ -25,6 +25,10 @@ export interface Group {
   location?: string;
   createdAt: string;
   updatedAt: string;
+  status?: "pending" | "approved" | "rejected";
+  recruitmentCompleted?: boolean;
+  memberCount?: number;
+  maxMembers?: number;
 }
 
 // API functions
@@ -35,5 +39,20 @@ export async function getGroups(): Promise<Group[]> {
 
 export async function getGroupById(id: string): Promise<Group | null> {
   const { data } = await apiClient.get<Group | null>(`/groups/${id}`);
+  return data;
+}
+
+// Admin API functions
+export async function getAdminGroups(): Promise<Group[]> {
+  const { data } = await apiClient.get<Group[]>("/study-somoim/admin/groups");
+  return data;
+}
+
+export async function getGroupsByRecruitmentStatus(
+  completed: boolean
+): Promise<Group[]> {
+  const { data } = await apiClient.get<Group[]>(
+    `/study-somoim/admin/groups?recruitmentCompleted=${completed}`
+  );
   return data;
 }
