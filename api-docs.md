@@ -21,7 +21,7 @@
 ### 1.1 Base URL
 
 ```
-http://localhost:3000/study-somoim
+https://api.samsam.spartacodingclub.kr/study-somoim
 ```
 
 ### 1.2 공통 헤더
@@ -338,7 +338,7 @@ interface PaginatedResponse<T> {
 
 **요청:**
 ```bash
-curl -X GET "http://localhost:3000/study-somoim/lookup/users"
+curl -X GET "https://api.samsam.spartacodingclub.kr/study-somoim/lookup/users"
 ```
 
 **응답:**
@@ -358,7 +358,7 @@ curl -X GET "http://localhost:3000/study-somoim/lookup/users"
 
 **요청:**
 ```bash
-curl -X GET "http://localhost:3000/study-somoim/lookup/teams"
+curl -X GET "https://api.samsam.spartacodingclub.kr/study-somoim/lookup/teams"
 ```
 
 **응답:**
@@ -381,7 +381,7 @@ curl -X GET "http://localhost:3000/study-somoim/lookup/teams"
 
 **요청:**
 ```bash
-curl -X GET "http://localhost:3000/study-somoim/chapters"
+curl -X GET "https://api.samsam.spartacodingclub.kr/study-somoim/chapters"
 ```
 
 **응답:**
@@ -403,7 +403,7 @@ curl -X GET "http://localhost:3000/study-somoim/chapters"
 
 **요청:**
 ```bash
-curl -X GET "http://localhost:3000/study-somoim/chapters/current"
+curl -X GET "https://api.samsam.spartacodingclub.kr/study-somoim/chapters/current"
 ```
 
 #### GET /chapters/:chapterId
@@ -412,7 +412,7 @@ curl -X GET "http://localhost:3000/study-somoim/chapters/current"
 
 **요청:**
 ```bash
-curl -X GET "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1"
+curl -X GET "https://api.samsam.spartacodingclub.kr/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1"
 ```
 
 #### POST /chapters
@@ -435,7 +435,7 @@ curl -X GET "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j
 
 **요청 예시:**
 ```bash
-curl -X POST "http://localhost:3000/study-somoim/chapters" \
+curl -X POST "https://api.samsam.spartacodingclub.kr/study-somoim/chapters" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "2026년 3-4월 챕터",
@@ -457,7 +457,7 @@ curl -X POST "http://localhost:3000/study-somoim/chapters" \
 **요청 바디 (UpdateChapterDto):** 모든 필드 선택사항
 
 ```bash
-curl -X PATCH "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1" \
+curl -X PATCH "https://api.samsam.spartacodingclub.kr/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "2026년 1-2월 챕터 (수정)"
@@ -499,7 +499,7 @@ curl -X PATCH "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i
 
 **요청 예시:**
 ```bash
-curl -X POST "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1/applications" \
+curl -X POST "https://api.samsam.spartacodingclub.kr/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1/applications" \
   -H "Content-Type: application/json" \
   -d '{
     "leaderId": "65f1a2b3c4d5e6f7g8h9i0k1",
@@ -530,7 +530,7 @@ curl -X POST "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0
 
 **요청 예시:**
 ```bash
-curl -X GET "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1/applications?page=1&limit=10&reviewStatus=pending"
+curl -X GET "https://api.samsam.spartacodingclub.kr/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1/applications?page=1&limit=10&reviewStatus=pending"
 ```
 
 #### GET /chapters/:chapterId/applications/me
@@ -541,7 +541,7 @@ curl -X GET "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j
 - `x-user-id`: 사용자 ID (필수)
 
 ```bash
-curl -X GET "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1/applications/me" \
+curl -X GET "https://api.samsam.spartacodingclub.kr/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1/applications/me" \
   -H "x-user-id: 65f1a2b3c4d5e6f7g8h9i0k1"
 ```
 
@@ -589,7 +589,7 @@ curl -X GET "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j
 
 **요청 예시:**
 ```bash
-curl -X PATCH "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1/applications/65f1a2b3c4d5e6f7g8h9i0j3/review" \
+curl -X PATCH "https://api.samsam.spartacodingclub.kr/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1/applications/65f1a2b3c4d5e6f7g8h9i0j3/review" \
   -H "Content-Type: application/json" \
   -H "x-user-id: 65f1a2b3c4d5e6f7g8h9i0k3" \
   -d '{
@@ -651,7 +651,7 @@ curl -X PATCH "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i
 
 **요청 예시:**
 ```bash
-curl -X POST "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1/groups/65f1a2b3c4d5e6f7g8h9i0j3/registration" \
+curl -X POST "https://api.samsam.spartacodingclub.kr/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1/groups/65f1a2b3c4d5e6f7g8h9i0j3/registration" \
   -H "Content-Type: application/json" \
   -d '{
     "leaderOrientationAttended": true,
@@ -694,7 +694,7 @@ curl -X POST "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0
 
 **요청 예시:**
 ```bash
-curl -X POST "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1/groups/65f1a2b3c4d5e6f7g8h9i0j3/members" \
+curl -X POST "https://api.samsam.spartacodingclub.kr/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1/groups/65f1a2b3c4d5e6f7g8h9i0j3/members" \
   -H "Content-Type: application/json" \
   -d '{
     "userId": "65f1a2b3c4d5e6f7g8h9i0k5",
@@ -753,7 +753,7 @@ curl -X POST "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0
 
 **요청 예시:**
 ```bash
-curl -X POST "http://localhost:3000/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1/groups/65f1a2b3c4d5e6f7g8h9i0j3/activities" \
+curl -X POST "https://api.samsam.spartacodingclub.kr/study-somoim/chapters/65f1a2b3c4d5e6f7g8h9i0j1/groups/65f1a2b3c4d5e6f7g8h9i0j3/activities" \
   -H "Content-Type: application/json" \
   -H "x-user-id: 65f1a2b3c4d5e6f7g8h9i0k1" \
   -d '{
@@ -1301,5 +1301,5 @@ export interface TeamLookup {
 서버 실행 후 다음 URL에서 Swagger UI를 확인할 수 있습니다:
 
 ```
-http://localhost:3000/api-docs
+https://api.samsam.spartacodingclub.kr/api-docs
 ```
