@@ -589,8 +589,7 @@ export default function Home() {
           <div
             style={{
               display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
+              flexDirection: "column",
               gap: "16px",
             }}
           >
@@ -598,11 +597,13 @@ export default function Home() {
               <Tabs.Trigger value="somoim">소모임</Tabs.Trigger>
               <Tabs.Trigger value="study">스터디</Tabs.Trigger>
             </Tabs.List>
-            <Link href="/create">
-              <Button variant="solid" colorScheme="primary" size="md">
-                새 소모임/스터디 개설하기
-              </Button>
-            </Link>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <Link href="/create">
+                <Button variant="solid" colorScheme="primary" size="md">
+                  새 소모임/스터디 개설하기
+                </Button>
+              </Link>
+            </div>
           </div>
 
           <Tabs.Content value="somoim">
