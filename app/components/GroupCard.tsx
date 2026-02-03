@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "@teamsparta/stack-button";
+import Link from "next/link";
 import { vars } from "@teamsparta/stack-tokens";
 import {
   InfoCalendar,
@@ -17,18 +17,28 @@ export function GroupCard({ group }: GroupCardProps) {
   const { name, description, schedule, location, leader } = group;
 
   return (
-    <div
+    <Link
+      href={`/groups/${group._id}`}
       style={{
-        backgroundColor: vars.background.subtle,
-        border: `1px solid ${vars.line.clickable}`,
-        borderRadius: "16px",
-        padding: "20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "20px",
+        textDecoration: "none",
+        color: "inherit",
+        display: "block",
         height: "100%",
       }}
     >
+      <div
+        style={{
+          backgroundColor: vars.background.subtle,
+          border: `1px solid ${vars.line.clickable}`,
+          borderRadius: "16px",
+          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "20px",
+          height: "100%",
+          cursor: "pointer",
+        }}
+      >
       {/* Image Area */}
       <div
         style={{
@@ -150,10 +160,24 @@ export function GroupCard({ group }: GroupCardProps) {
         </div>
       </div>
 
-      <Button variant="outline" colorScheme="secondary" size="sm">
-        상세보기
-      </Button>
-    </div>
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "6px 12px",
+            fontSize: "14px",
+            fontWeight: 500,
+            borderRadius: "8px",
+            border: `1px solid ${vars.line.clickable}`,
+            color: vars.text.secondary,
+            backgroundColor: "transparent",
+          }}
+        >
+          상세보기
+        </span>
+      </div>
+    </Link>
   );
 }
 

@@ -1,12 +1,31 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import * as Tabs from "@teamsparta/stack-tabs";
 import { Button } from "@teamsparta/stack-button";
 import { vars } from "@teamsparta/stack-tokens";
 import Link from "next/link";
 import { GroupCard } from "./components/GroupCard";
-import { groupsQueryOptions } from "./lib/queries";
+import { RecruitmentFilters } from "./components/RecruitmentFilters";
+import {
+  groupsQueryOptions,
+  currentChapterQueryOptions,
+  recruitingGroupsQueryOptions,
+} from "./lib/queries";
+import { getGroupsWithMockFields } from "./lib/mock";
+import {
+  applyRecruitmentFilters,
+  type RecruitmentFiltersState,
+} from "./lib/recruitment";
+import type { Group, ChapterGroup } from "./lib/api";
+
+const defaultFilters: RecruitmentFiltersState = {
+  applyAvailable: "all",
+  applyUnavailable: "all",
+  days: [],
+  categories: [],
+};
 
 // 가짜 데이터: 스터디/소모임 현재 상태
 const mockStatusData = {
@@ -97,13 +116,107 @@ const mockWeeklySchedule = [
 ];
 
 export default function Home() {
-  const { data: groups, isLoading, error } = useQuery(groupsQueryOptions);
+  // 현재 챕터 조회
+  const { 
+    data: currentChapter, 
+    isLoading: isChapterLoading,
+    error: chapterError 
+  } = useQuery(currentChapterQueryOptions);
+  
+  // 챕터가 있으면 recruiting groups 사용, 없으면 레거시 groups 사용
+  const recruitingGroupsQuery = recruitingGroupsQueryOptions(
+    currentChapter?._id || ""
+  );
+  const { 
+    data: recruitingGroups, 
+    isLoading: isRecruitingLoading,
+    error: recruitingError 
+  } = useQuery({
+    ...recruitingGroupsQuery,
+    enabled: !!currentChapter?._id,
+  });
+  const { 
+    data: legacyGroups, 
+    isLoading: isLegacyLoading, 
+    error: legacyError 
+  } = useQuery({
+    ...groupsQueryOptions,
+    enabled: !currentChapter?._id, // 챕터가 없을 때만 레거시 API 사용
+  });
+  
+  const [filters, setFilters] = useState<RecruitmentFiltersState>(defaultFilters);
 
-  const somoim = groups?.filter((group) => group.type === "소모임") ?? [];
-  const study = groups?.filter((group) =>
-    group.type === "스터디(팀/파트/스쿼드 대상)" ||
-    group.type === "스터디(전사 구성원 대상)"
-  ) ?? [];
+  // 통합 로딩/에러 상태
+  const isLoading = isChapterLoading || isRecruitingLoading || isLegacyLoading;
+  const error = chapterError || recruitingError || legacyError;
+
+  // ChapterGroup을 Group 형태로 변환 (UI 호환)
+  const groups = useMemo((): Group[] => {
+    // recruiting groups가 있으면 우선 사용
+    if (recruitingGroups && Array.isArray(recruitingGroups) && recruitingGroups.length > 0) {
+      return recruitingGroups.map((cg: ChapterGroup) => {
+        const group = typeof cg.group === "object" ? cg.group : null;
+        return {
+          _id: cg._id,
+          name: group?.name || cg._id,
+          leader: cg.leader,
+          team: cg.team,
+          type: cg.type,
+          description: group?.description,
+          schedule: cg.meetingSchedule,
+          location: cg.meetingLocation,
+          hasLeaderExperience: cg.leaderOrientationAttended,
+          category: group?.category,
+          isActive: group?.isActive ?? true,
+          createdAt: cg.createdAt,
+          updatedAt: cg.updatedAt,
+        } as Group;
+      });
+    }
+    // 레거시 groups 사용 (이미 type이 변환되어 있음)
+    if (legacyGroups && Array.isArray(legacyGroups) && legacyGroups.length > 0) {
+      return legacyGroups;
+    }
+    return [];
+  }, [recruitingGroups, legacyGroups]);
+
+  const withMock = useMemo(
+    () => (groups ? getGroupsWithMockFields(groups, currentChapter || undefined) : []),
+    [groups, currentChapter]
+  );
+  const somoimRaw = useMemo(
+    () => withMock.filter((g) => g.type === "somoim"),
+    [withMock]
+  );
+  const studyRaw = useMemo(
+    () =>
+      withMock.filter(
+        (g) => g.type === "study_team" || g.type === "study_company"
+      ),
+    [withMock]
+  );
+  const somoim = useMemo(
+    () => applyRecruitmentFilters(somoimRaw, filters),
+    [somoimRaw, filters]
+  );
+  const study = useMemo(
+    () => applyRecruitmentFilters(studyRaw, filters),
+    [studyRaw, filters]
+  );
+
+  // 디버깅: 데이터 상태 확인 (개발 환경에서만)
+  if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+    console.log("🔍 Data Debug:", {
+      currentChapter: currentChapter?._id || "없음",
+      recruitingGroupsCount: recruitingGroups?.length || 0,
+      legacyGroupsCount: legacyGroups?.length || 0,
+      groupsCount: groups.length,
+      somoimCount: somoim.length,
+      studyCount: study.length,
+      isLoading,
+      error: error ? String(error) : null,
+    });
+  }
 
   // 신생 소/스: 최근 7일 이내에 생성된 그룹들 (실제 데이터 기반)
   const now = new Date();
@@ -301,6 +414,8 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Filters */}
+        <RecruitmentFilters filters={filters} onFiltersChange={setFilters} />
         {/* 주간 소/스 캘린더 (가짜 데이터 기반) */}
         <div
           style={{
@@ -425,7 +540,7 @@ export default function Home() {
                         paddingTop: activity.isNewcomerWelcome ? "42px" : "20px",
                         borderRadius: "8px",
                         backgroundColor:
-                          activity.type === "소모임"
+                          activity.type === "소모임" || activity.type === "somoim"
                             ? "#FFEBEE" // 연한 빨간색
                             : "#E3F2FD", // 하늘색
                         display: "flex",
@@ -498,7 +613,7 @@ export default function Home() {
                         style={{
                           fontSize: "11px",
                           color:
-                            activity.type === "소모임"
+                            activity.type === "소모임" || activity.type === "somoim"
                               ? vars.text.secondary
                               : vars.text.tertiary,
                         }}
