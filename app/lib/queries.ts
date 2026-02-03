@@ -6,24 +6,56 @@ import {
   getGroupsByRecruitmentStatus,
   getChapters,
   getCurrentChapter,
-  createChapter,
   getChapterApplications,
   getChapterRegistrations,
-  type CreateChapterDto,
-  type GroupType,
-  type ReviewStatus,
 } from "./api";
 
+// 현재 챕터 조회
+export const currentChapterQueryOptions = queryOptions({
+  queryKey: ["chapters", "current"],
+  queryFn: getCurrentChapter,
+});
+
+// 그룹 목록 조회 (레거시 API)
 export const groupsQueryOptions = queryOptions({
   queryKey: ["groups"],
   queryFn: getGroups,
 });
 
-export const groupQueryOptions = (id: string) =>
+// 모집 중인 그룹 목록 조회 (챕터 기반)
+export const recruitingGroupsQueryOptions = (chapterId: string) =>
   queryOptions({
-    queryKey: ["groups", id],
-    queryFn: () => getGroupById(id),
+    queryKey: ["groups", "recruiting", chapterId],
+    queryFn: () => getRecruitingGroups(chapterId),
+    enabled: !!chapterId,
+  });
+
+// 그룹 상세 조회
+export const groupQueryOptions = (id: string, chapterId?: string) =>
+  queryOptions({
+    queryKey: ["groups", id, chapterId],
+    queryFn: () => getGroupById(id, chapterId),
     enabled: !!id,
+  });
+
+// 내 멤버십 목록 조회
+export const myMembershipsQueryOptions = (chapterId: string, userId: string) =>
+  queryOptions({
+    queryKey: ["my-applications", chapterId, userId],
+    queryFn: () => getMyMemberships(chapterId, userId),
+    enabled: !!chapterId && !!userId,
+  });
+
+// 그룹의 멤버십 목록 조회 (리더용)
+export const membershipsQueryOptions = (
+  chapterId: string,
+  groupId: string,
+  params?: Parameters<typeof getMemberships>[2]
+) =>
+  queryOptions({
+    queryKey: ["memberships", chapterId, groupId, params],
+    queryFn: () => getMemberships(chapterId, groupId, params),
+    enabled: !!chapterId && !!groupId,
   });
 
 export const adminGroupsQueryOptions = queryOptions({
@@ -42,18 +74,13 @@ export const chaptersQueryOptions = queryOptions({
   queryFn: getChapters,
 });
 
-export const currentChapterQueryOptions = queryOptions({
-  queryKey: ["chapters", "current"],
-  queryFn: getCurrentChapter,
-});
-
 export const chapterApplicationsQueryOptions = (
   chapterId: string,
   params?: {
     page?: number;
     limit?: number;
-    type?: GroupType;
-    reviewStatus?: ReviewStatus;
+    type?: string;
+    reviewStatus?: string;
     search?: string;
   }
 ) =>
