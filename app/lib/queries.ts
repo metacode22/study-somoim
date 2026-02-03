@@ -17,6 +17,8 @@ import {
   getChapterRegistrations,
   type CreateApplicationDto,
   type CreateChapterDto,
+  type GroupType,
+  type ReviewStatus,
 } from "./api";
 
 export const groupsQueryOptions = queryOptions({
@@ -87,8 +89,8 @@ export const chapterApplicationsQueryOptions = (
   params?: {
     page?: number;
     limit?: number;
-    type?: string;
-    reviewStatus?: string;
+    type?: GroupType;
+    reviewStatus?: ReviewStatus;
     search?: string;
   }
 ) =>
