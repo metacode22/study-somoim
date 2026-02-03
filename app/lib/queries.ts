@@ -2,10 +2,12 @@ import { queryOptions } from "@tanstack/react-query";
 import {
   getGroups,
   getGroupById,
+  getAdminGroups,
+  getGroupsByRecruitmentStatus,
+  getChapters,
   getCurrentChapter,
-  getRecruitingGroups,
-  getMyMemberships,
-  getMemberships,
+  getChapterApplications,
+  getChapterRegistrations,
 } from "./api";
 
 // 현재 챕터 조회
@@ -37,10 +39,7 @@ export const groupQueryOptions = (id: string, chapterId?: string) =>
   });
 
 // 내 멤버십 목록 조회
-export const myMembershipsQueryOptions = (
-  chapterId: string,
-  userId: string
-) =>
+export const myMembershipsQueryOptions = (chapterId: string, userId: string) =>
   queryOptions({
     queryKey: ["my-applications", chapterId, userId],
     queryFn: () => getMyMemberships(chapterId, userId),
@@ -57,4 +56,43 @@ export const membershipsQueryOptions = (
     queryKey: ["memberships", chapterId, groupId, params],
     queryFn: () => getMemberships(chapterId, groupId, params),
     enabled: !!chapterId && !!groupId,
+  });
+
+export const adminGroupsQueryOptions = queryOptions({
+  queryKey: ["admin", "groups"],
+  queryFn: getAdminGroups,
+});
+
+export const groupsByRecruitmentStatusQueryOptions = (completed: boolean) =>
+  queryOptions({
+    queryKey: ["admin", "groups", "recruitment", completed],
+    queryFn: () => getGroupsByRecruitmentStatus(completed),
+  });
+
+export const chaptersQueryOptions = queryOptions({
+  queryKey: ["chapters"],
+  queryFn: getChapters,
+});
+
+export const chapterApplicationsQueryOptions = (
+  chapterId: string,
+  params?: {
+    page?: number;
+    limit?: number;
+    type?: string;
+    reviewStatus?: string;
+    search?: string;
+  }
+) =>
+  queryOptions({
+    queryKey: ["chapters", chapterId, "applications", params],
+    queryFn: () => getChapterApplications(chapterId, params),
+    enabled: !!chapterId,
+  });
+
+export const chapterRegistrationsQueryOptions = (chapterId: string) =>
+  queryOptions({
+    queryKey: ["chapters", chapterId, "registrations"],
+    queryFn: () => getChapterRegistrations(chapterId),
+    enabled: !!chapterId,
   });

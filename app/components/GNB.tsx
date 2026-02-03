@@ -120,6 +120,25 @@ export function GNB() {
             >
               활동 로그
             </Link>
+            <Link
+              href="/admin"
+              style={{
+                backgroundColor:
+                  pathname === "/admin" ? vars.fill.subtle : "transparent",
+                borderRadius: "6px",
+                padding: "6px 12px",
+                fontSize: "15px",
+                fontWeight: 500,
+                color:
+                  pathname === "/admin"
+                    ? vars.text.secondary
+                    : vars.text.tertiary,
+                textDecoration: "none",
+                lineHeight: "22px",
+              }}
+            >
+              관리자
+            </Link>
           </div>
         </div>
 
