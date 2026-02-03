@@ -7,6 +7,8 @@ import {
   getChapters,
   getCurrentChapter,
   createChapter,
+  getChapterApplications,
+  getChapterRegistrations,
   type CreateChapterDto,
 } from "./api";
 
@@ -42,3 +44,26 @@ export const currentChapterQueryOptions = queryOptions({
   queryKey: ["chapters", "current"],
   queryFn: getCurrentChapter,
 });
+
+export const chapterApplicationsQueryOptions = (
+  chapterId: string,
+  params?: {
+    page?: number;
+    limit?: number;
+    type?: string;
+    reviewStatus?: string;
+    search?: string;
+  }
+) =>
+  queryOptions({
+    queryKey: ["chapters", chapterId, "applications", params],
+    queryFn: () => getChapterApplications(chapterId, params),
+    enabled: !!chapterId,
+  });
+
+export const chapterRegistrationsQueryOptions = (chapterId: string) =>
+  queryOptions({
+    queryKey: ["chapters", chapterId, "registrations"],
+    queryFn: () => getChapterRegistrations(chapterId),
+    enabled: !!chapterId,
+  });
