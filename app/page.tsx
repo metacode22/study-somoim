@@ -2,7 +2,9 @@
 
 import { useQuery } from "@tanstack/react-query";
 import * as Tabs from "@teamsparta/stack-tabs";
+import { Button } from "@teamsparta/stack-button";
 import { vars } from "@teamsparta/stack-tokens";
+import Link from "next/link";
 import { GroupCard } from "./components/GroupCard";
 import { groupsQueryOptions } from "./lib/queries";
 
@@ -584,10 +586,24 @@ export default function Home() {
 
         {/* Tabs Section */}
         <Tabs.Root defaultValue="somoim" colorScheme="secondary">
-          <Tabs.List>
-            <Tabs.Trigger value="somoim">소모임</Tabs.Trigger>
-            <Tabs.Trigger value="study">스터디</Tabs.Trigger>
-          </Tabs.List>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "16px",
+            }}
+          >
+            <Tabs.List>
+              <Tabs.Trigger value="somoim">소모임</Tabs.Trigger>
+              <Tabs.Trigger value="study">스터디</Tabs.Trigger>
+            </Tabs.List>
+            <Link href="/create">
+              <Button variant="solid" colorScheme="primary" size="md">
+                새 소모임/스터디 개설하기
+              </Button>
+            </Link>
+          </div>
 
           <Tabs.Content value="somoim">
             <div
