@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "/api/backend",
   headers: {
     "Content-Type": "application/json",
   },
@@ -110,9 +110,100 @@ export async function getCurrentChapter(): Promise<Chapter | null> {
 export async function createChapter(
   chapterData: CreateChapterDto
 ): Promise<Chapter> {
-  const { data } = await apiClient.post<Chapter>(
-    "/study-somoim/chapters",
-    chapterData
+  // 디버깅: 요청 데이터 확인
+  console.log("API Request URL:", "/study-somoim/chapters");
+  console.log("API Request Data:", JSON.stringify(chapterData, null, 2));
+  
+  try {
+    const { data } = await apiClient.post<Chapter>(
+      "/study-somoim/chapters",
+      chapterData
+    );
+    return data;
+  } catch (error: any) {
+    // 에러 상세 정보 로깅
+    console.error("Chapter creation error details:", {
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      data: error?.response?.data,
+      message: error?.message,
+    });
+    throw error;
+  }
+}
+
+// ChapterGroup types
+export type ReviewStatus = "pending" | "approved" | "rejected" | "auto_extended";
+
+export interface ChapterGroup {
+  _id: string;
+  chapter: string;
+  group: string;
+  leader: string;
+  team?: string;
+  type: GroupType;
+  operationPlan?: string;
+  meetingSchedule?: string;
+  meetingLocation?: string;
+  reviewStatus: ReviewStatus;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  reviewComment?: string;
+  isExtension: boolean;
+  leaderOrientationAttended: boolean;
+  subLeader?: string;
+  allowNewHires: boolean;
+  registeredAt?: string;
+  status: "rejected" | "pending" | "approved" | "registered";
+  isRegistered: boolean;
+  createdAt: string;
+  updatedAt: string;
+  // Populated fields
+  groupName?: string;
+  leaderName?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+  };
+}
+
+// Chapter-specific API functions
+export async function getChapterApplications(
+  chapterId: string,
+  params?: {
+    page?: number;
+    limit?: number;
+    type?: GroupType;
+    reviewStatus?: ReviewStatus;
+    search?: string;
+  }
+): Promise<PaginatedResponse<ChapterGroup>> {
+  const queryParams = new URLSearchParams();
+  if (params?.page) queryParams.append("page", params.page.toString());
+  if (params?.limit) queryParams.append("limit", params.limit.toString());
+  if (params?.type) queryParams.append("type", params.type);
+  if (params?.reviewStatus)
+    queryParams.append("reviewStatus", params.reviewStatus);
+  if (params?.search) queryParams.append("search", params.search);
+
+  const { data } = await apiClient.get<PaginatedResponse<ChapterGroup>>(
+    `/study-somoim/chapters/${chapterId}/applications?${queryParams.toString()}`
+  );
+  return data;
+}
+
+export async function getChapterRegistrations(
+  chapterId: string
+): Promise<ChapterGroup[]> {
+  const { data } = await apiClient.get<ChapterGroup[]>(
+    `/study-somoim/chapters/${chapterId}/registrations`
   );
   return data;
 }

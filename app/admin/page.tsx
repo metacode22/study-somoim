@@ -4,42 +4,80 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as Tabs from "@teamsparta/stack-tabs";
 import { vars } from "@teamsparta/stack-tokens";
 import { Button } from "@teamsparta/stack-button";
-import { adminGroupsQueryOptions, chaptersQueryOptions } from "../lib/queries";
-import { createChapter, type CreateChapterDto } from "../lib/api";
-import type { Group } from "../lib/api";
+import {
+  chaptersQueryOptions,
+  chapterApplicationsQueryOptions,
+  chapterRegistrationsQueryOptions,
+} from "../lib/queries";
+import { createChapter, type CreateChapterDto, type Chapter, type ChapterGroup } from "../lib/api";
 import { useState } from "react";
 
 export default function AdminPage() {
-  const { data: groups, isLoading, error } = useQuery(adminGroupsQueryOptions);
   const queryClient = useQueryClient();
+  const [selectedChapterId, setSelectedChapterId] = useState<string>("");
 
-  // 신청한 그룹들 (모든 그룹)
-  const allGroups = groups ?? [];
+  // 챕터 목록 조회
+  const { data: chapters = [] } = useQuery(chaptersQueryOptions);
 
-  // 부원모집 완료한 그룹들
-  const recruitmentCompletedGroups =
-    groups?.filter((group) => group.recruitmentCompleted === true) ?? [];
+  // 선택된 챕터의 신청 목록 조회
+  const {
+    data: applicationsData,
+    isLoading: isLoadingApplications,
+    error: applicationsError,
+  } = useQuery(
+    chapterApplicationsQueryOptions(selectedChapterId, { limit: 100 })
+  );
 
-  // 부원모집 진행 중인 그룹들
-  const recruitmentPendingGroups =
-    groups?.filter(
-      (group) => group.recruitmentCompleted === false || group.recruitmentCompleted === undefined
-    ) ?? [];
+  // 선택된 챕터의 등록 완료 목록 조회
+  const {
+    data: registrations = [],
+    isLoading: isLoadingRegistrations,
+    error: registrationsError,
+  } = useQuery(chapterRegistrationsQueryOptions(selectedChapterId));
+
+  // 첫 번째 챕터를 기본 선택
+  const defaultChapter = chapters.length > 0 ? chapters[0] : null;
+  const currentChapterId = selectedChapterId || defaultChapter?._id || "";
+
+  // 선택된 챕터의 데이터
+  const chapterApplications = applicationsData?.data || [];
+  const allApplications = chapterApplications;
+  const registeredGroups = registrations;
+  const pendingGroups = chapterApplications.filter(
+    (app) => !app.isRegistered && app.reviewStatus !== "rejected"
+  );
 
   const createChapterMutation = useMutation({
     mutationFn: createChapter,
-    onSuccess: () => {
+    onSuccess: (newChapter) => {
       queryClient.invalidateQueries({ queryKey: ["chapters"] });
+      // 새로 생성된 챕터를 자동 선택
+      setSelectedChapterId(newChapter._id);
       alert("챕터가 성공적으로 생성되었습니다.");
     },
     onError: (error: any) => {
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        "챕터 생성에 실패했습니다.";
-      alert(Array.isArray(message) ? message.join(", ") : message);
+      console.error("Chapter creation error:", error);
+      let message = "챕터 생성에 실패했습니다.";
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        if (Array.isArray(errorData.message)) {
+          message = errorData.message.join(", ");
+        } else if (typeof errorData.message === "string") {
+          message = errorData.message;
+        } else if (errorData.error) {
+          message = `${errorData.error}: ${JSON.stringify(errorData)}`;
+        }
+      } else if (error?.message) {
+        message = error.message;
+      }
+      
+      alert(message);
     },
   });
+
+  const isLoading = isLoadingApplications || isLoadingRegistrations;
+  const error = applicationsError || registrationsError;
 
   return (
     <div
@@ -88,92 +126,150 @@ export default function AdminPage() {
           isLoading={createChapterMutation.isPending}
         />
 
-        {/* Stats Cards */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-            gap: "16px",
-          }}
-        >
-          <StatCard
-            title="전체 신청"
-            value={allGroups.length}
-            color={vars.text.primary}
-          />
-          <StatCard
-            title="부원모집 완료"
-            value={recruitmentCompletedGroups.length}
-            color={vars.status.success.default}
-          />
-          <StatCard
-            title="부원모집 진행 중"
-            value={recruitmentPendingGroups.length}
-            color={vars.status.processing.default}
-          />
-        </div>
-
-        {/* Tabs Section */}
-        <Tabs.Root defaultValue="all" colorScheme="secondary">
-          <Tabs.List>
-            <Tabs.Trigger value="all">
-              전체 신청 ({allGroups.length})
-            </Tabs.Trigger>
-            <Tabs.Trigger value="completed">
-              부원모집 완료 ({recruitmentCompletedGroups.length})
-            </Tabs.Trigger>
-          </Tabs.List>
-
-          <Tabs.Content value="all">
-            <div
+        {/* Chapter Selection */}
+        {chapters.length > 0 && (
+          <div>
+            <label
               style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-                paddingTop: "24px",
+                display: "block",
+                fontSize: "14px",
+                fontWeight: 500,
+                color: vars.text.secondary,
+                marginBottom: "8px",
               }}
             >
-              {isLoading && <LoadingState />}
-              {error && (
-                <ErrorState message="데이터를 불러오는데 실패했습니다" />
-              )}
-              {!isLoading && !error && allGroups.length === 0 && (
-                <EmptyState message="신청된 스터디 소모임이 없습니다" />
-              )}
-              {!isLoading &&
-                !error &&
-                allGroups.map((group) => (
-                  <AdminGroupCard key={group._id} group={group} />
-                ))}
-            </div>
-          </Tabs.Content>
-
-          <Tabs.Content value="completed">
-            <div
+              챕터 선택
+            </label>
+            <select
+              value={currentChapterId}
+              onChange={(e) => setSelectedChapterId(e.target.value)}
               style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-                paddingTop: "24px",
+                width: "100%",
+                padding: "8px 12px",
+                fontSize: "14px",
+                border: `1px solid ${vars.line.clickable}`,
+                borderRadius: "6px",
+                backgroundColor: vars.background.default,
+                color: vars.text.primary,
+                fontFamily: "inherit",
+                cursor: "pointer",
               }}
             >
-              {isLoading && <LoadingState />}
-              {error && (
-                <ErrorState message="데이터를 불러오는데 실패했습니다" />
-              )}
-              {!isLoading &&
-                !error &&
-                recruitmentCompletedGroups.length === 0 && (
-                  <EmptyState message="부원모집을 완료한 스터디 소모임이 없습니다" />
-                )}
-              {!isLoading &&
-                !error &&
-                recruitmentCompletedGroups.map((group) => (
-                  <AdminGroupCard key={group._id} group={group} />
-                ))}
+              {chapters.map((chapter) => (
+                <option key={chapter._id} value={chapter._id}>
+                  {chapter.name} ({chapter.currentPhase})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Stats Cards - 챕터별 데이터 */}
+        {currentChapterId && (
+          <>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                gap: "16px",
+              }}
+            >
+              <StatCard
+                title="전체 신청"
+                value={allApplications.length}
+                color={vars.text.primary}
+              />
+              <StatCard
+                title="부원모집 완료"
+                value={registeredGroups.length}
+                color={vars.status.success.default}
+              />
+              <StatCard
+                title="부원모집 진행 중"
+                value={pendingGroups.length}
+                color={vars.status.processing.default}
+              />
             </div>
-          </Tabs.Content>
-        </Tabs.Root>
+
+            {/* Tabs Section - 챕터별 데이터 */}
+            <Tabs.Root defaultValue="all" colorScheme="secondary">
+              <Tabs.List>
+                <Tabs.Trigger value="all">
+                  전체 신청 ({allApplications.length})
+                </Tabs.Trigger>
+                <Tabs.Trigger value="completed">
+                  부원모집 완료 ({registeredGroups.length})
+                </Tabs.Trigger>
+              </Tabs.List>
+
+              <Tabs.Content value="all">
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                    paddingTop: "24px",
+                  }}
+                >
+                  {isLoading && <LoadingState />}
+                  {error && (
+                    <ErrorState message="데이터를 불러오는데 실패했습니다" />
+                  )}
+                  {!isLoading && !error && allApplications.length === 0 && (
+                    <EmptyState message="신청된 스터디 소모임이 없습니다" />
+                  )}
+                  {!isLoading &&
+                    !error &&
+                    allApplications.map((application) => (
+                      <AdminChapterGroupCard
+                        key={application._id}
+                        chapterGroup={application}
+                      />
+                    ))}
+                </div>
+              </Tabs.Content>
+
+              <Tabs.Content value="completed">
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                    paddingTop: "24px",
+                  }}
+                >
+                  {isLoading && <LoadingState />}
+                  {error && (
+                    <ErrorState message="데이터를 불러오는데 실패했습니다" />
+                  )}
+                  {!isLoading && !error && registeredGroups.length === 0 && (
+                    <EmptyState message="부원모집을 완료한 스터디 소모임이 없습니다" />
+                  )}
+                  {!isLoading &&
+                    !error &&
+                    registeredGroups.map((registration) => (
+                      <AdminChapterGroupCard
+                        key={registration._id}
+                        chapterGroup={registration}
+                      />
+                    ))}
+                </div>
+              </Tabs.Content>
+            </Tabs.Root>
+          </>
+        )}
+
+        {!currentChapterId && chapters.length === 0 && (
+          <div
+            style={{
+              padding: "40px",
+              textAlign: "center",
+              color: vars.text.tertiary,
+            }}
+          >
+            챕터를 먼저 생성해주세요.
+          </div>
+        )}
       </main>
     </div>
   );
@@ -223,22 +319,29 @@ function StatCard({
   );
 }
 
-function AdminGroupCard({ group }: { group: Group }) {
+function AdminChapterGroupCard({
+  chapterGroup,
+}: {
+  chapterGroup: ChapterGroup;
+}) {
   const {
-    name,
+    groupName,
     type,
+    leaderName,
     leader,
     team,
-    description,
-    schedule,
-    location,
+    operationPlan,
+    meetingSchedule,
+    meetingLocation,
+    reviewStatus,
+    status,
+    isRegistered,
+    registeredAt,
     createdAt,
-    recruitmentCompleted,
-    memberCount,
-    maxMembers,
-  } = group;
+  } = chapterGroup;
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return "-";
     const date = new Date(dateString);
     return date.toLocaleDateString("ko-KR", {
       year: "numeric",
@@ -246,6 +349,37 @@ function AdminGroupCard({ group }: { group: Group }) {
       day: "numeric",
     });
   };
+
+  const getStatusBadge = () => {
+    if (isRegistered) {
+      return {
+        text: "등록 완료",
+        color: vars.status.success.default,
+        bgColor: vars.status.success.subtle,
+      };
+    }
+    if (reviewStatus === "approved" || reviewStatus === "auto_extended") {
+      return {
+        text: "승인됨",
+        color: vars.status.processing.default,
+        bgColor: vars.status.processing.subtle,
+      };
+    }
+    if (reviewStatus === "rejected") {
+      return {
+        text: "반려됨",
+        color: vars.status.error.default,
+        bgColor: vars.status.error.subtle,
+      };
+    }
+    return {
+      text: "심사 대기",
+      color: vars.status.warning?.default || vars.text.tertiary,
+      bgColor: vars.background.default,
+    };
+  };
+
+  const statusBadge = getStatusBadge();
 
   return (
     <div
@@ -275,6 +409,7 @@ function AdminGroupCard({ group }: { group: Group }) {
               alignItems: "center",
               gap: "8px",
               marginBottom: "8px",
+              flexWrap: "wrap",
             }}
           >
             <h3
@@ -285,7 +420,7 @@ function AdminGroupCard({ group }: { group: Group }) {
                 color: vars.text.primary,
               }}
             >
-              {name}
+              {groupName || "그룹 이름 없음"}
             </h3>
             <span
               style={{
@@ -299,31 +434,31 @@ function AdminGroupCard({ group }: { group: Group }) {
             >
               {type}
             </span>
-            {recruitmentCompleted && (
-              <span
-                style={{
-                  fontSize: "12px",
-                  padding: "4px 8px",
-                  backgroundColor: vars.status.success.subtle,
-                  borderRadius: "4px",
-                  color: vars.status.success.default,
-                  fontWeight: 500,
-                }}
-              >
-                모집 완료
-              </span>
-            )}
+            <span
+              style={{
+                fontSize: "12px",
+                padding: "4px 8px",
+                backgroundColor: statusBadge.bgColor,
+                borderRadius: "4px",
+                color: statusBadge.color,
+                fontWeight: 500,
+              }}
+            >
+              {statusBadge.text}
+            </span>
           </div>
-          <p
-            style={{
-              margin: 0,
-              fontSize: "14px",
-              color: vars.text.tertiary,
-              lineHeight: "20px",
-            }}
-          >
-            {description || "설명이 없습니다"}
-          </p>
+          {operationPlan && (
+            <p
+              style={{
+                margin: 0,
+                fontSize: "14px",
+                color: vars.text.tertiary,
+                lineHeight: "20px",
+              }}
+            >
+              {operationPlan}
+            </p>
+          )}
         </div>
       </div>
 
@@ -344,15 +479,30 @@ function AdminGroupCard({ group }: { group: Group }) {
           gap: "12px",
         }}
       >
-        <InfoRow label="리더" value={leader} />
+        <InfoRow label="리더" value={leaderName || leader || "-"} />
         {team && <InfoRow label="팀" value={team} />}
-        {schedule && <InfoRow label="일정" value={schedule} />}
-        {location && <InfoRow label="장소" value={location} />}
+        {meetingSchedule && (
+          <InfoRow label="일정" value={meetingSchedule} />
+        )}
+        {meetingLocation && (
+          <InfoRow label="장소" value={meetingLocation} />
+        )}
         <InfoRow label="신청일" value={formatDate(createdAt)} />
-        {memberCount !== undefined && maxMembers !== undefined && (
+        {registeredAt && (
+          <InfoRow label="등록일" value={formatDate(registeredAt)} />
+        )}
+        {reviewStatus && (
           <InfoRow
-            label="인원"
-            value={`${memberCount} / ${maxMembers}명`}
+            label="심사 상태"
+            value={
+              reviewStatus === "pending"
+                ? "대기 중"
+                : reviewStatus === "approved"
+                ? "승인됨"
+                : reviewStatus === "rejected"
+                ? "반려됨"
+                : "자동 연장"
+            }
           />
         )}
       </div>
@@ -529,24 +679,46 @@ function ChapterCreationForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      // 날짜를 ISO string으로 변환 (YYYY-MM-DD -> ISO)
-      const convertToISO = (dateStr: string) => {
+      // 날짜를 ISO 8601 형식으로 변환 (YYYY-MM-DD -> YYYY-MM-DDTHH:mm:ssZ)
+      // API 문서 예시: "2026-03-01T00:00:00Z"
+      const convertToISO = (dateStr: string, isEndDate: boolean = false) => {
         if (!dateStr) return "";
-        const date = new Date(dateStr);
-        return date.toISOString();
+        
+        // 날짜 유효성 검사
+        const date = new Date(dateStr + "T00:00:00Z");
+        if (isNaN(date.getTime())) {
+          throw new Error(`Invalid date: ${dateStr}`);
+        }
+        
+        // YYYY-MM-DD 형식을 ISO 8601 형식으로 변환
+        // 시작일은 00:00:00Z, 종료일은 23:59:59Z
+        const time = isEndDate ? "T23:59:59Z" : "T00:00:00Z";
+        const isoString = dateStr + time;
+        
+        // 최종 검증: ISO 형식이 올바른지 확인
+        const testDate = new Date(isoString);
+        if (isNaN(testDate.getTime())) {
+          throw new Error(`Invalid ISO date format: ${isoString}`);
+        }
+        
+        return isoString;
       };
 
       const submitData: CreateChapterDto = {
         name: formData.name.trim(),
         periods: {
-          applicationStart: convertToISO(formData.periods.applicationStart),
-          applicationEnd: convertToISO(formData.periods.applicationEnd) + "T23:59:59.999Z",
-          recruitmentStart: convertToISO(formData.periods.recruitmentStart),
-          recruitmentEnd: convertToISO(formData.periods.recruitmentEnd) + "T23:59:59.999Z",
-          activityStart: convertToISO(formData.periods.activityStart),
-          activityEnd: convertToISO(formData.periods.activityEnd) + "T23:59:59.999Z",
+          applicationStart: convertToISO(formData.periods.applicationStart, false),
+          applicationEnd: convertToISO(formData.periods.applicationEnd, true),
+          recruitmentStart: convertToISO(formData.periods.recruitmentStart, false),
+          recruitmentEnd: convertToISO(formData.periods.recruitmentEnd, true),
+          activityStart: convertToISO(formData.periods.activityStart, false),
+          activityEnd: convertToISO(formData.periods.activityEnd, true),
         },
       };
+      
+      // 디버깅: 요청 데이터 확인
+      console.log("Chapter creation request:", JSON.stringify(submitData, null, 2));
+      
       onSubmit(submitData);
       // 성공 시 폼 초기화
       setFormData({
