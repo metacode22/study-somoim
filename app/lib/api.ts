@@ -37,3 +37,58 @@ export async function getGroupById(id: string): Promise<Group | null> {
   const { data } = await apiClient.get<Group | null>(`/groups/${id}`);
   return data;
 }
+
+// Chapter types
+export type ChapterPhase =
+  | "upcoming"
+  | "application"
+  | "recruitment"
+  | "active"
+  | "completed";
+
+export interface ChapterPeriods {
+  applicationStart: string;
+  applicationEnd: string;
+  recruitmentStart: string;
+  recruitmentEnd: string;
+  activityStart: string;
+  activityEnd: string;
+}
+
+export interface Chapter {
+  _id: string;
+  name: string;
+  sequence: number;
+  periods: ChapterPeriods;
+  currentPhase: ChapterPhase;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Chapter API functions
+export async function getCurrentChapter(): Promise<Chapter | null> {
+  const { data } = await apiClient.get<Chapter>("/study-somoim/chapters/current");
+  return data;
+}
+
+// Activity types
+export interface Activity {
+  _id: string;
+  groupName: string;
+  activityDate: string;
+  content?: string;
+  link?: string;
+  mediaUrl?: string;
+  chapterGroup?: string;
+  chapter?: string;
+  group?: string;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Activity API functions
+export async function getChapterActivities(chapterId: string): Promise<Activity[]> {
+  const { data } = await apiClient.get<Activity[]>(`/study-somoim/chapters/${chapterId}/activities`);
+  return data;
+}

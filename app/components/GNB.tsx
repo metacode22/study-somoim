@@ -66,6 +66,23 @@ export function GNB() {
             }}
           >
             <Link
+              href="/main"
+              style={{
+                backgroundColor:
+                  pathname === "/main" ? vars.fill.subtle : "transparent",
+                borderRadius: "6px",
+                padding: "6px 12px",
+                fontSize: "15px",
+                fontWeight: 500,
+                color:
+                  pathname === "/main" ? vars.text.secondary : vars.text.tertiary,
+                textDecoration: "none",
+                lineHeight: "22px",
+              }}
+            >
+              홈
+            </Link>
+            <Link
               href="/"
               style={{
                 backgroundColor:
