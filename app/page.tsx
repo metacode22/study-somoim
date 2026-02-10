@@ -1,31 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import * as Tabs from "@teamsparta/stack-tabs";
-import { Button } from "@teamsparta/stack-button";
 import { vars } from "@teamsparta/stack-tokens";
-import Link from "next/link";
-import { GroupCard } from "./components/GroupCard";
-import { RecruitmentFilters } from "./components/RecruitmentFilters";
-import {
-  groupsQueryOptions,
-  currentChapterQueryOptions,
-  recruitingGroupsQueryOptions,
-} from "./lib/queries";
-import { getGroupsWithMockFields } from "./lib/mock";
-import {
-  applyRecruitmentFilters,
-  type RecruitmentFiltersState,
-} from "./lib/recruitment";
-import type { Group, ChapterGroup } from "./lib/api";
-
-const defaultFilters: RecruitmentFiltersState = {
-  applyAvailable: "all",
-  applyUnavailable: "all",
-  days: [],
-  categories: [],
-};
 
 // 가짜 데이터: 스터디/소모임 현재 상태
 const mockStatusData = {
@@ -116,119 +91,6 @@ const mockWeeklySchedule = [
 ];
 
 export default function Home() {
-  // 현재 챕터 조회
-  const { 
-    data: currentChapter, 
-    isLoading: isChapterLoading,
-    error: chapterError 
-  } = useQuery(currentChapterQueryOptions);
-  
-  // 챕터가 있으면 recruiting groups 사용, 없으면 레거시 groups 사용
-  const recruitingGroupsQuery = recruitingGroupsQueryOptions(
-    currentChapter?._id || ""
-  );
-  const { 
-    data: recruitingGroups, 
-    isLoading: isRecruitingLoading,
-    error: recruitingError 
-  } = useQuery({
-    ...recruitingGroupsQuery,
-    enabled: !!currentChapter?._id,
-  });
-  const { 
-    data: legacyGroups, 
-    isLoading: isLegacyLoading, 
-    error: legacyError 
-  } = useQuery({
-    ...groupsQueryOptions,
-    enabled: !currentChapter?._id, // 챕터가 없을 때만 레거시 API 사용
-  });
-  
-  const [filters, setFilters] = useState<RecruitmentFiltersState>(defaultFilters);
-
-  // 통합 로딩/에러 상태
-  const isLoading = isChapterLoading || isRecruitingLoading || isLegacyLoading;
-  const error = chapterError || recruitingError || legacyError;
-
-  // ChapterGroup을 Group 형태로 변환 (UI 호환)
-  const groups = useMemo((): Group[] => {
-    // recruiting groups가 있으면 우선 사용
-    if (recruitingGroups && Array.isArray(recruitingGroups) && recruitingGroups.length > 0) {
-      return recruitingGroups.map((cg: ChapterGroup) => {
-        const group = typeof cg.group === "object" ? cg.group : null;
-        return {
-          _id: cg._id,
-          name: group?.name || cg._id,
-          leader: cg.leader,
-          team: cg.team,
-          type: cg.type,
-          description: group?.description,
-          schedule: cg.meetingSchedule,
-          location: cg.meetingLocation,
-          hasLeaderExperience: cg.leaderOrientationAttended,
-          category: group?.category,
-          isActive: group?.isActive ?? true,
-          createdAt: cg.createdAt,
-          updatedAt: cg.updatedAt,
-        } as Group;
-      });
-    }
-    // 레거시 groups 사용 (이미 type이 변환되어 있음)
-    if (legacyGroups && Array.isArray(legacyGroups) && legacyGroups.length > 0) {
-      return legacyGroups;
-    }
-    return [];
-  }, [recruitingGroups, legacyGroups]);
-
-  const withMock = useMemo(
-    () => (groups ? getGroupsWithMockFields(groups, currentChapter || undefined) : []),
-    [groups, currentChapter]
-  );
-  const somoimRaw = useMemo(
-    () => withMock.filter((g) => g.type === "somoim"),
-    [withMock]
-  );
-  const studyRaw = useMemo(
-    () =>
-      withMock.filter(
-        (g) => g.type === "study_team" || g.type === "study_company"
-      ),
-    [withMock]
-  );
-  const somoim = useMemo(
-    () => applyRecruitmentFilters(somoimRaw, filters),
-    [somoimRaw, filters]
-  );
-  const study = useMemo(
-    () => applyRecruitmentFilters(studyRaw, filters),
-    [studyRaw, filters]
-  );
-
-  // 디버깅: 데이터 상태 확인 (개발 환경에서만)
-  if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
-    console.log("🔍 Data Debug:", {
-      currentChapter: currentChapter?._id || "없음",
-      recruitingGroupsCount: recruitingGroups?.length || 0,
-      legacyGroupsCount: legacyGroups?.length || 0,
-      groupsCount: groups.length,
-      somoimCount: somoim.length,
-      studyCount: study.length,
-      isLoading,
-      error: error ? String(error) : null,
-    });
-  }
-
-  // 신생 소/스: 최근 7일 이내에 생성된 그룹들 (실제 데이터 기반)
-  const now = new Date();
-  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const newGroups = groups?.filter((group) => {
-    const createdAt = new Date(group.createdAt);
-    return createdAt >= sevenDaysAgo;
-  }).sort((a, b) => {
-    // 최신순으로 정렬
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  }).slice(0, 5) ?? []; // 최대 5개만 표시
-
   return (
     <div
       style={{
@@ -272,7 +134,7 @@ export default function Home() {
                 color: vars.text.primary,
               }}
             >
-              공지사항 - 한다원
+              진행상황
             </h2>
             <div
               style={{
@@ -309,7 +171,6 @@ export default function Home() {
                   position: "relative",
                 }}
               >
-                {/* 연결선 */}
                 {index < mockStatusData.stages.length - 1 && (
                   <div
                     style={{
@@ -326,7 +187,6 @@ export default function Home() {
                     }}
                   />
                 )}
-                {/* 단계 카드 */}
                 <div
                   style={{
                     width: "100%",
@@ -414,9 +274,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Filters */}
-        <RecruitmentFilters filters={filters} onFiltersChange={setFilters} />
-        {/* 주간 소/스 캘린더 (가짜 데이터 기반) */}
+        {/* 주간 소/스 캘린더 */}
         <div
           style={{
             display: "flex",
@@ -541,14 +399,13 @@ export default function Home() {
                         borderRadius: "8px",
                         backgroundColor:
                           activity.type === "소모임" || activity.type === "somoim"
-                            ? "#FFEBEE" // 연한 빨간색
-                            : "#E3F2FD", // 하늘색
+                            ? "#FFEBEE"
+                            : "#E3F2FD",
                         display: "flex",
                         flexDirection: "column",
                         gap: "4px",
                       }}
                     >
-                      {/* 신규입사자 환영 라벨 */}
                       {activity.isNewcomerWelcome && (
                         <div
                           style={{
@@ -569,7 +426,6 @@ export default function Home() {
                           신규입사자 환영
                         </div>
                       )}
-                      {/* 주기 라벨 */}
                       <div
                         style={{
                           position: "absolute",
@@ -638,185 +494,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-
-        {/* 신생 소/스 Section */}
-        {newGroups.length > 0 && (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: "20px",
-                  fontWeight: 700,
-                  color: vars.text.primary,
-                }}
-              >
-                신생 소/스
-              </h2>
-              <span
-                style={{
-                  fontSize: "14px",
-                  color: vars.text.tertiary,
-                  fontWeight: 500,
-                }}
-              >
-                최근 7일 이내 신규 개설
-              </span>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                gap: "16px",
-                overflowX: "auto",
-                paddingBottom: "8px",
-                scrollbarWidth: "thin",
-              }}
-            >
-              {newGroups.map((group) => (
-                <div
-                  key={group._id}
-                  style={{
-                    minWidth: "320px",
-                    flexShrink: 0,
-                  }}
-                >
-                  <GroupCard group={group} />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Tabs Section */}
-        <Tabs.Root defaultValue="somoim" colorScheme="secondary">
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px",
-            }}
-          >
-            <Tabs.List>
-              <Tabs.Trigger value="somoim">소모임</Tabs.Trigger>
-              <Tabs.Trigger value="study">스터디</Tabs.Trigger>
-            </Tabs.List>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <Link href="/create">
-                <Button variant="solid" colorScheme="primary" size="md">
-                  새 소모임/스터디 개설하기
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-          <Tabs.Content value="somoim">
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
-                gap: "24px",
-                paddingTop: "24px",
-              }}
-            >
-              {isLoading && <LoadingState />}
-              {error && (
-                <ErrorState message="소모임을 불러오는데 실패했습니다" />
-              )}
-              {!isLoading && !error && somoim.length === 0 && (
-                <EmptyState message="등록된 소모임이 없습니다" />
-              )}
-              {somoim.map((group) => (
-                <GroupCard key={group._id} group={group} />
-              ))}
-            </div>
-          </Tabs.Content>
-
-          <Tabs.Content value="study">
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(350px, 1fr))",
-                gap: "24px",
-                paddingTop: "24px",
-              }}
-            >
-              {isLoading && <LoadingState />}
-              {error && (
-                <ErrorState message="스터디를 불러오는데 실패했습니다" />
-              )}
-              {!isLoading && !error && study.length === 0 && (
-                <EmptyState message="등록된 스터디가 없습니다" />
-              )}
-              {study.map((group) => (
-                <GroupCard key={group._id} group={group} />
-              ))}
-            </div>
-          </Tabs.Content>
-        </Tabs.Root>
       </main>
-    </div>
-  );
-}
-
-function LoadingState() {
-  return (
-    <div
-      style={{
-        gridColumn: "1 / -1",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "60px",
-        color: vars.text.tertiary,
-      }}
-    >
-      로딩 중...
-    </div>
-  );
-}
-
-function ErrorState({ message }: { message: string }) {
-  return (
-    <div
-      style={{
-        gridColumn: "1 / -1",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "60px",
-        color: vars.status.error.default,
-      }}
-    >
-      {message}
-    </div>
-  );
-}
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div
-      style={{
-        gridColumn: "1 / -1",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "60px",
-        color: vars.text.tertiary,
-      }}
-    >
-      {message}
     </div>
   );
 }

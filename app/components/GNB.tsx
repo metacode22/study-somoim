@@ -80,6 +80,23 @@ export function GNB() {
                 lineHeight: "22px",
               }}
             >
+              홈
+            </Link>
+            <Link
+              href="/list"
+              style={{
+                backgroundColor:
+                  pathname === "/list" ? vars.fill.subtle : "transparent",
+                borderRadius: "6px",
+                padding: "6px 12px",
+                fontSize: "15px",
+                fontWeight: 500,
+                color:
+                  pathname === "/list" ? vars.text.secondary : vars.text.tertiary,
+                textDecoration: "none",
+                lineHeight: "22px",
+              }}
+            >
               소/스 목록
             </Link>
             <Link
