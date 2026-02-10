@@ -723,6 +723,19 @@ export interface CreateChapterDto {
   };
 }
 
+export interface UpdateChapterDto {
+  name?: string;
+  sequence?: number;
+  periods?: {
+    applicationStart?: string;
+    applicationEnd?: string;
+    recruitmentStart?: string;
+    recruitmentEnd?: string;
+    activityStart?: string;
+    activityEnd?: string;
+  };
+}
+
 export async function getChapters(): Promise<Chapter[]> {
   const { data } = await apiClient.get<Chapter[]>("/study-somoim/chapters");
   return data;
@@ -741,6 +754,35 @@ export async function createChapter(
   const { data } = await apiClient.post<Chapter>(
     "/study-somoim/chapters",
     chapterData
+  );
+  return data;
+}
+
+export async function updateChapter(
+  chapterId: string,
+  chapterData: UpdateChapterDto
+): Promise<Chapter> {
+  if (process.env.NODE_ENV === "development") {
+    console.log("🔧 updateChapter 호출:", {
+      chapterId,
+      chapterData: JSON.stringify(chapterData, null, 2),
+    });
+  }
+  const { data } = await apiClient.patch<Chapter>(
+    `/study-somoim/chapters/${chapterId}`,
+    chapterData
+  );
+  if (process.env.NODE_ENV === "development") {
+    console.log("✅ updateChapter 응답:", data);
+  }
+  return data;
+}
+
+export async function deleteChapter(
+  chapterId: string
+): Promise<{ success: boolean }> {
+  const { data } = await apiClient.delete<{ success: boolean }>(
+    `/study-somoim/chapters/${chapterId}`
   );
   return data;
 }
